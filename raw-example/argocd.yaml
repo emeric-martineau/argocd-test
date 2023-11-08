@@ -9,8 +9,8 @@ spec:
     server: https://kubernetes.default.svc 
   project: default 
   source: 
-    path: raw-example
-    repoURL: https://github.com/emeric-martineau/argocd-test/resources
+    path: raw-example/resources
+    repoURL: https://github.com/emeric-martineau/argocd-test/
     targetRevision: main
   syncPolicy: 
     automated:
