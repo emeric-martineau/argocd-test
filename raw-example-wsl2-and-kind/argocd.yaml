@@ -9,7 +9,7 @@ spec:
     server: https://kubernetes.default.svc 
   project: default 
   source: 
-    path: raw-example/resources
+    path: raw-example-wsl2-and-kind/resources
     repoURL: https://github.com/emeric-martineau/argocd-test/
     targetRevision: main
   syncPolicy: 
