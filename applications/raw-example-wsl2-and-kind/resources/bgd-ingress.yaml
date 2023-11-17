@@ -3,12 +3,13 @@ kind: Ingress
 metadata:
   name: bgd-ingress
   annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
   - http:
       paths:
-      - pathType: Prefix
+      - pathType: ImplementationSpecific
         path: /bgd(/|$)(.*)
         backend:
           service:

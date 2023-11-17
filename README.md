@@ -53,8 +53,21 @@ chmod a+x /usr/local/bin/yq
 
 You need disable TLS and add a base href to ArgoCD:
 ```sh
-kubectl --namespace argocd get configmap argocd-cmd-params-cm -o yaml | yq '.data["server.basehref"] = "/argocd" | .data["server.insecure"] = "true"' >
-argocd-cmd-params-cm.yaml && kubectl apply -f argocd-cmd-params-cm.yaml
+kubectl --namespace argocd get configmap argocd-cmd-params-cm -o yaml | yq '.data["server.basehref"] = "/argocd" | .data["server.insecure"] = "true"' > argocd-cmd-params-cm.yaml && kubectl apply -f argocd-cmd-params-cm.yaml
+POD_NAME="$(kubectl --namespace argocd get pods --selector="app.kubernetes.io/name=argocd-server" -o jsonpath='{.items[0].metadata.name}')"
+kubectl --namespace argocd delete pod "${POD_NAME}"
 ```
 
-Now, you can access to ArgoCD by using `http://localhost/argocd/`.
+Now, we create ingress:
+```sh
+kubectl apply -f kind/argocd-kind-ingress.yaml
+```
+
+Now, you can access to ArgoCD by using `http://localhost:8080/argocd/`.
+
+## Install Conjur
+
+```sh
+export DATA_KEY="$(docker container run --rm cyberark/conjur:1.20.1-4405 data-key generate)"
+cat applications/conjur/argocd.yaml | envsubst > conjur-argocd.yaml && kubectl apply -f conjur-argocd.yaml
+```
