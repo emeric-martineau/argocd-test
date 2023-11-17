@@ -70,4 +70,21 @@ Now, you can access to ArgoCD by using `http://localhost:8080/argocd/`.
 ```sh
 export DATA_KEY="$(docker container run --rm cyberark/conjur:1.20.1-4405 data-key generate)"
 cat applications/conjur/argocd.yaml | envsubst > conjur-argocd.yaml && kubectl apply -f conjur-argocd.yaml
+
+# Change type of service
+kubectl --namespace conjur get service conjur-conjur-oss -o yaml | yq '.spec.ports = .spec.ports + {"name": "http", "port": 80, "protocol": "TCP", "targetPort": "http"} | del(.spec.clusterIP) | del(.spec.clusterIPs) | del(.spec.externalTrafficPolicy) | del(.spec.internalTrafficPolicy) | del(.spec.ipFamilies) | del(.spec.ipFamilyPolicy) | .spec.type = "ClusterIP"' > conjur-conjur-oss-service.yaml
+kubectl apply -f conjur-conjur-oss-service.yaml
+
+# Create ingress
+kubectl apply -f applications/conjur/conjur-oss-ingress.yaml
+
+# Change Nginx configuration to remove http redirect to https
+export CONJUR_SITE="$(cat applications/conjur/conjur_site.conf)"
+kubectl --namespace conjur get configmap conjur-conjur-nginx-configmap -o yaml | yq '.data.conjur_site = strenv(CONJUR_SITE)'
+
+# Kill pod to restart
+POD_NAME="$(kubectl --namespace conjur get pods --selector="app.kubernetes.io/name: conjur" -o jsonpath='{.items[0].metadata.name}')"
+kubectl --namespace conjur delete pod "${POD_NAME}"
 ```
+
+Try to display hello page by using `http://localhost:8080/conjur/`.

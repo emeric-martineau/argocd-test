@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: conjur-conjur-oss
+  namespace: conjur
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - pathType: ImplementationSpecific
+        path: /conjur(/|$)(.*)
+        backend:
+          service:
+            name: conjur-conjur-oss
+            port:
+              number: 80
+  - http:
+      paths:
+      - pathType: ImplementationSpecific
+        path: /conjur(/|$)(.*)
+        backend:
+          service:
+            name: conjur-conjur-oss
+            port:
+              number: 443

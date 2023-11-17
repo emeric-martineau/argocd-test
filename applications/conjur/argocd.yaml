@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: conjur
+  namespace: argocd
+spec:
+  destination:
+    namespace: conjur
+    server: https://kubernetes.default.svc 
+  project: default 
+  source: 
+    path: conjur-oss/
+    repoURL: https://github.com/cyberark/conjur-oss-helm-chart/
+    targetRevision: v2.0.7
+    helm:
+      releaseName: conjur
+      parameters:
+      - name: "dataKey"
+        value: $DATA_KEY
+      - name: "service.external.enabled"
+        value: "false"
+      - name: "openshift.enabled"
+        value: "false"
+  syncPolicy: 
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+    - CreateNamespace=true
