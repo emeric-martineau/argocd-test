@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  AVP_AUTH_TYPE: apiKey
+  AVP_CONJUR_ACCOUNT: default
+  AVP_CONJUR_HOST: host/argocd-plugin
+  AVP_CONJUR_URL: https://conjur-conjur-oss/
+  AVP_TYPE: conjurvault
+  AVP_CONJUR_API_KEY: "$AVP_CONJUR_API_KEY"
+  AVP_CONJUR_SSL_CERT: "$AVP_CONJUR_SSL_CERT"
+kind: ConfigMap
+metadata:
+  name: vault-plugin-cm
+  namespace: argocd

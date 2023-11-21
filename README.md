@@ -68,8 +68,10 @@ Now, you can access to ArgoCD by using `http://localhost:8080/argocd/`.
 ## Install Conjur
 
 ```sh
-export DATA_KEY="$(docker container run --rm cyberark/conjur:1.20.1-4405 data-key generate)"
-cat applications/conjur/argocd.yaml | envsubst > conjur-argocd.yaml && kubectl apply -f conjur-argocd.yaml
+(
+  export DATA_KEY="$(docker container run --rm cyberark/conjur:1.20.1-4405 data-key generate)"
+  envsubst < applications/conjur/argocd.yaml > conjur-argocd.yaml
+) && kubectl apply -f conjur-argocd.yaml
 
 # Change type of service
 kubectl --namespace conjur get service conjur-conjur-oss -o yaml | yq '.spec.ports = .spec.ports + {"name": "http", "port": 80, "protocol": "TCP", "targetPort": "http"} | del(.spec.clusterIP) | del(.spec.clusterIPs) | del(.spec.externalTrafficPolicy) | del(.spec.internalTrafficPolicy) | del(.spec.ipFamilies) | del(.spec.ipFamilyPolicy) | .spec.type = "ClusterIP"' > conjur-conjur-oss-service.yaml
@@ -88,3 +90,33 @@ kubectl --namespace conjur delete pod "${POD_NAME}"
 ```
 
 Try to display hello page by using `http://localhost:8080/conjur/`.
+
+## Add ArgoCD Vault Plugin with Conjur
+
+See https://discuss.cyberarkcommons.org/t/argocd-vault-plug-in-supports-conjur/2046
+
+First, we add two config map:
+```sh
+kubectl apply -f applications/conjur/argocd-plugin/k8s_cmp-plugin-configmap.yaml
+
+(
+  export AVP_CONJUR_API_KEY="$(kubectl --namespace conjur get secret conjur-conjur-data-key -o yaml | yq '.data.key' | base64 -d)"
+  export AVP_CONJUR_SSL_CERT="$(kubectl --namespace conjur get secret conjur-conjur-ssl-ca-cert -o yaml | yq '.data["tls.crt"]' | base64 -d)"
+  yq '.data.AVP_CONJUR_API_KEY = strenv(AVP_CONJUR_API_KEY) | .data.AVP_CONJUR_SSL_CERT = strenv(AVP_CONJUR_SSL_CERT)' applications/conjur/argocd-plugin/k8s_vault-plugin-cm.yaml > k8s_vault-plugin-cm.yaml
+) && kubectl apply -f k8s_vault-plugin-cm.yaml
+```
+
+We need add some properties on `argocd-repo-server` deployment:
+```sh
+# Extract ArgoCD deployment
+kubectl --namespace argocd get deployment argocd-repo-server -o yaml > argocd-repo-server-deployment.yaml
+
+# Add volume mounts
+yq --inplace '.spec.template.spec.containers[0].volumeMounts = .spec.template.spec.containers[0].volumeMounts +  {"mountPath": "/home/argocd/cmp-server/config/plugin.yaml", "name": "cmp-plugin", "subPath": "avp.yaml"}' argocd-repo-server-deployment.yaml
+
+# Add volume
+yq --inplace '.spec.template.spec.volumes = .spec.template.spec.volumes +  {"name": "cmp-plugin", "configMap": {"name": "cmp-plugin", "defaultMode": 420}}' argocd-repo-server-deployment.yaml
+
+# Add env var from config map
+yq --inplace '.spec.template.spec.containers[0] = .spec.template.spec.containers[0] +  {"envFrom": [{"configMapRef": {"name": "vault-plugin-cm"}}]}' argocd-repo-server-deployment.yaml
+```
