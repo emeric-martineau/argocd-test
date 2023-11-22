@@ -91,6 +91,43 @@ kubectl --namespace conjur delete pod "${POD_NAME}"
 
 Try to display hello page by using `http://localhost:8080/conjur/`.
 
+Now, you must create admin account:
+```sh
+kubectl --namespace conjur exec --stdin --tty "${CONJUR_POD_NAME}" --container conjur-oss -- conjurctl account create myConjurAccount
+
+Token-Signing Public Key: -----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----
+API key for admin: ...
+```
+
+Copy/Paste output in a file.
+
+Install Conjur CLI under Windows. Download at https://github.com/cyberark/cyberark-conjur-cli/releases but be careful, version 7.1.0 doesn't work (see [issue 409](https://github.com/cyberark/cyberark-conjur-cli/issues/409) posted on May 20, 2022!)
+
+Create profile under Windows:
+```sh
+.\conjur.exe init -u https://localhost/conjur -a myConjurAccount --self-signed
+
+Using self-signed certificates is not recommended and could lead to exposure of sensitive data.
+ Continue? yes/no (Default: no): y
+
+The Conjur server's certificate SHA-1 fingerprint is:
+
+To verify this certificate, we recommend running the following command on the Conjur server:
+openssl x509 -fingerprint -noout -in ~conjur/etc/ssl/conjur.pem
+Trust this certificate? yes/no (Default: no): yes
+Certificate written to C:\Users\xxxxx\conjur-server.pem
+
+Successfully initialized the Conjur CLI
+To start using the Conjur CLI, log in to the Conjur server by running `conjur login`
+```
+
+then test login:
+```sh
+.\conjur.exe --insecure login -i admin -p <api_key>
+```
+
 ## Add ArgoCD Vault Plugin with Conjur
 
 See https://discuss.cyberarkcommons.org/t/argocd-vault-plug-in-supports-conjur/2046
