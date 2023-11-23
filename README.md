@@ -149,11 +149,16 @@ We need add some properties on `argocd-repo-server` deployment:
 kubectl --namespace argocd get deployment argocd-repo-server -o yaml > argocd-repo-server-deployment.yaml
 
 # Add volume mounts
-yq --inplace '.spec.template.spec.containers[0].volumeMounts = .spec.template.spec.containers[0].volumeMounts +  {"mountPath": "/home/argocd/cmp-server/config/plugin.yaml", "name": "cmp-plugin", "subPath": "avp.yaml"}' argocd-repo-server-deployment.yaml
+yq --inplace '.spec.template.spec.containers[0].volumeMounts += {"mountPath": "/home/argocd/cmp-server/config/plugin.yaml", "name": "cmp-plugin", "subPath": "avp.yaml"}' argocd-repo-server-deployment.yaml
+yq --inplace '.spec.template.spec.containers[0].volumeMounts += {"mountPath": "/usr/local/bin/argocd-vault-plugin", "name": "custom-tools", "subPath": "argocd-vault-plugin"}' argocd-repo-server-deployment.yaml
 
 # Add volume
-yq --inplace '.spec.template.spec.volumes = .spec.template.spec.volumes +  {"name": "cmp-plugin", "configMap": {"name": "cmp-plugin", "defaultMode": 420}}' argocd-repo-server-deployment.yaml
+yq --inplace '.spec.template.spec.volumes += {"name": "cmp-plugin", "configMap": {"name": "cmp-plugin", "defaultMode": 420}}' argocd-repo-server-deployment.yaml
+yq --inplace '.spec.template.spec.volumes += {"name": "custom-tools", "emptyDir": {}}' argocd-repo-server-deployment.yaml
 
 # Add env var from config map
-yq --inplace '.spec.template.spec.containers[0] = .spec.template.spec.containers[0] +  {"envFrom": [{"configMapRef": {"name": "vault-plugin-cm"}}]}' argocd-repo-server-deployment.yaml
+yq --inplace '.spec.template.spec.containers[0] += {"envFrom": [{"configMapRef": {"name": "vault-plugin-cm"}}]}' argocd-repo-server-deployment.yaml
+
+# Add volume in init container
+yq --inplace '.spec.template.spec.initContainers += {"args": ["cp /usr/local/bin/argocd-vault-plugin /custom-tools/"], "command": ["sh", "-c"], "image": "itdistrict/argocd-vault-plugin:1.2", "name": "install-argocd-vault-plugin", "volumeMounts":[{"mountPath": "/custom-tools", "name": "custom-tools"}]}' argocd-repo-server-deployment.yaml
 ```
