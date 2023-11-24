@@ -103,3 +103,7 @@ yq --inplace '.spec.template.spec.containers[0] += {"envFrom": [{"configMapRef":
 # Add volume in init container
 yq --inplace '.spec.template.spec.initContainers += {"args": ["cp /usr/local/bin/argocd-vault-plugin /custom-tools/"], "command": ["sh", "-c"], "image": "itdistrict/argocd-vault-plugin:1.2", "name": "install-argocd-vault-plugin", "volumeMounts":[{"mountPath": "/custom-tools", "name": "custom-tools"}]}' argocd-repo-server-deployment.yaml
 ```
+
+## External secrets Kubernetes Operator
+
+See [./EXTERNAL_SECRETS_CONJUR.md](EXTERNAL_SECRETS_CONJUR.md)

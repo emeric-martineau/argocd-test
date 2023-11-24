@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
 spec:
   destination:
-    namespace: default
+    namespace: external-secrets
     server: https://kubernetes.default.svc 
   project: default 
   source: 
@@ -15,11 +15,6 @@ spec:
     targetRevision: main
     helm:
       releaseName: external-secrets
-      parameters:
-      - name: "webhook.create"
-        value: "false"
-      - name: "certController.create"
-        value: "false"
   syncPolicy: 
     automated:
       prune: true
