@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-secrets
+  namespace: argocd
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc 
+  project: default 
+  source: 
+  source: 
+    path: applications/external-secrets/chart
+    repoURL: https://github.com/emeric-martineau/argocd-test/
+    targetRevision: main
+    helm:
+      releaseName: external-secrets
+      parameters:
+      - name: "webhook.create"
+        value: "false"
+      - name: "certController.create"
+        value: "false"
+  syncPolicy: 
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+    - CreateNamespace=true
